@@ -1,0 +1,92 @@
+#include <Servo.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Componentes
+int PIR = 2;
+int TRIG = 3;
+int ECHO = 4;
+
+int BUZZER = 10;
+
+Servo cancela;
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+long duracao;
+int distancia;
+
+void setup() {
+  pinMode(PIR, INPUT);
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+
+  pinMode(BUZZER, OUTPUT);
+
+  cancela.attach(6);
+  cancela.write(0);
+
+  lcd.init();
+  lcd.backlight();
+
+  lcd.setCursor(0, 0);
+  lcd.print("CANCELA AUTO");
+  lcd.setCursor(0, 1);
+  lcd.print("Estacionamento");
+
+  delay(2000);
+}
+
+void loop() {
+
+  // Medir distancia
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+
+  duracao = pulseIn(ECHO, HIGH, 30000);
+
+  distancia = duracao * 0.034 / 2;
+
+  // Verificar sensor PIR
+  int movimento = digitalRead(PIR);
+
+  if (distancia > 0 && distancia <= 15) {
+
+    // Abrir cancela
+    cancela.write(90);
+
+    tone(BUZZER, 1000, 200);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Veiculo detectado");
+    lcd.setCursor(0, 1);
+    lcd.print("Cancela aberta");
+
+    delay(3000);
+
+  } else {
+
+    // Fechar cancela
+    cancela.write(0);
+
+    noTone(BUZZER);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Estacionamento");
+    lcd.setCursor(0, 1);
+
+    if (movimento == HIGH) {
+      lcd.print("Movimento!");
+    } else {
+      lcd.print("Aguardando...");
+    }
+
+    delay(300);
+  }
+}
